@@ -1,0 +1,85 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.IO;
+using System.Resources;
+using System.Windows.Forms; // Needed for ResXResourceReader
+using System.Text;
+
+class Program
+{
+    static void Main()
+    {
+        string resourceFilesFolderPath = @"C:\Downloads\Resources";  // Update to your resx files folder path
+        string outputCsvPath = @"C:\Downloads\resources.csv"; // Path to output CSV file
+        string destinationFilePath = @"C:\Downloads\LocalizationReportConstant.csv"; // Path to the destination CSV file
+
+        // Call the function to convert resx files to CSV
+        ConvertResxToCsv(resourceFilesFolderPath, outputCsvPath);
+
+        // Call the function to append newly created CSV file to exisitng CSV file from Repo        
+        AppendCsv(outputCsvPath, destinationFilePath);
+    }
+
+    static void ConvertResxToCsv(string resourceFilesFolderPath, string outputCsvPath) 
+    {
+        string[] groupNames = { "CapacityPlanningLabels" }; // Update to your groupName 
+        string prefixOfGroupNames = "CP"; // Update to your prefixGroupName
+               Dictionary<string, string> countryCodes = new Dictionary<string, string>() { { "ar-SA", "1025"},{ "bg-BG", "1026"},{ "ca-ES", "1027"},{ "zh-TW", "1028"},
+                                                                                     { "cs-CZ", "1029"},{ "fr-FR", "1036"},{ "he-IL", "1037"},{ "hu-HU", "1038"},
+                                                                                     { "it-IT", "1040"},{ "ja-JP", "1041"},{ "ro-RO", "1048"},{ "ru-RU", "1049"},
+                                                                                     { "hr-HR", "1050"},{ "sk-SK", "1051"},{ "sv-SE", "1053"},{ "et-EE", "1061"},
+                                                                                     { "lv-LV", "1062"},{ "lt-LT", "1063"},{ "vi-VN", "1066"},{ "eu-ES", "1069"},
+                                                                                     { "da-DK", "1030"},{ "de-DE", "1031"},{ "el-GR", "1032"},{ "en-US", "1033"},
+                                                                                     { "fi-FI", "1035"},{ "ko-KR", "1042"},{ "nl-NL", "1043"},{ "nb-NO", "1044"},
+                                                                                     { "pl-PL", "1045"},{ "pt-BR", "1046"},{ "th-TH", "1054"},{ "tr-TR", "1055"},
+                                                                                     { "id-ID", "1057"},{ "uk-UA", "1058"},{ "sl-SI", "1060"},{ "hi-IN", "1081"},
+                                                                                     { "ms-MY", "1086"},{ "kk-KZ", "1087"},{ "gl-ES", "1110"},{ "zh-CN", "2052"},
+                                                                                     { "pt-PT", "2070"},{ "sr-Latn-CS", "2074"},{ "zh-HK", "3076"},{ "es-ES", "3082"},
+                                                                                     { "sr-Cyrl-CS", "3098"}
+                                                                                 };
+        String _comment = "";
+        String _name = "";
+
+        using (StreamWriter csvWriter = new StreamWriter(outputCsvPath, false, Encoding.UTF8))
+        {
+            foreach (var fileHandler in Directory.GetFiles(resourceFilesFolderPath, "*.resx"))
+            {
+                ResXResourceReader rr = new ResXResourceReader(fileHandler);
+                rr.UseResXDataNodes = true;
+                IDictionaryEnumerator dict = rr.GetEnumerator();
+
+                while (dict.MoveNext())
+                {
+                    ResXDataNode node = (ResXDataNode)dict.Value;
+                    _comment = node.Comment;
+                    _name = node.Name;
+
+                    String resourceValue = node?.GetValue((ITypeResolutionService)null)?.ToString();
+
+                    csvWriter.WriteLine($"\"{prefixOfGroupNames}_Labels\",\"{_name}\", {resourceValue} ");
+                }
+            }
+        }
+        Console.WriteLine($"CSV file has been generated at: {outputCsvPath}");
+    }
+    static void AppendCsv(string sourceFilePath, string destinationFilePath)
+    {
+        // Open the source file for reading
+        using (StreamReader reader = new StreamReader(sourceFilePath))
+        {
+            // Open the destination file for appendin
+            using (StreamWriter writer = new StreamWriter(destinationFilePath, append: true, encoding: System.Text.Encoding.UTF8))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // Write each line from the source file to the destination file
+                    writer.WriteLine(line);
+                }
+            }
+        }
+        Console.WriteLine("CSV files have been merged.");
+    }
+}
